@@ -2,6 +2,7 @@ import sqlite3
 from contextlib import closing
 import os
 from classes.db_classes import *
+from app.functions import *
 
 DB = """
     CREATE TABLE names(
@@ -42,10 +43,22 @@ class DBManager:
     def searchName(self, name):
         if not isinstance(name, Name):
             raise TypeError("Name should be an instance of Name class")
-        found = self.conn.execute("""SELECT count(*) FROM names WHERE
-                                    name = ?""", (name.name,)).fetchone()
-        if found[0] > 0:
+        found = self.conn.execute(f"""SELECT count(*) FROM names WHERE
+                                    name LIKE '%{name.name}%'""").fetchone()
+        if found[0] == 1:
+            matches = self.show_matching_entries(name)
+            name.name = matches[0][1]
             return self.load_using_name(name)
+        elif found[0] > 1:
+            matches = self.show_matching_entries(name)
+            t = validate_integer_range(f'Enter the number equivalent to the name you are looking for or {len(matches)} to cancel:\n ',
+                                        0, len(matches))
+            if null_or_blank(str(t)):
+                return
+            if t == len(matches):
+                return
+            name.id = matches[t][0]
+            return self.load_using_id(name)
         else:
             return None
     def load_using_id(self, name):
@@ -73,6 +86,15 @@ class DBManager:
                     break
             new.telephone_list.addItem(telephone_number)
         return new
+    def show_matching_entries(self, name):
+        if isinstance(name, Name):
+            name = str(name)
+        matches_found = self.conn.execute(f"""SELECT * FROM names WHERE
+                                            name LIKE '%{name}%'""").fetchall()
+        if len(matches_found) > 1:
+            for i in range(len(matches_found)):
+                print(f"[{i}] - [{matches_found[i][1]}]")
+        return matches_found
     def list(self):
         match = self.conn.execute("SELECT * FROM names ORDER BY name")
         # print(match)

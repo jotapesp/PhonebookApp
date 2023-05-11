@@ -10,7 +10,7 @@ class Menu:
         self.options.append([name, function])
     def show(self):
         print("\nMenu")
-        print("----")
+        print("------------")
         for i, option in enumerate(self.options):
             print(f"[{i}] - {option[0]}")
         print()
@@ -43,6 +43,7 @@ class AppContacts:
     def __init__(self, database):
         self.manager = DBManager(database)
         self.menu = Menu()
+        self.menu.addOption('Search', self.fetch)
         self.menu.addOption('New', self.new)
         self.menu.addOption('Edit', self.edit)
         self.menu.addOption('Delete', self.delete)
@@ -59,6 +60,17 @@ class AppContacts:
             name = Name(name)
         data = self.manager.searchName(name)
         return data
+    def fetch(self):
+        name = AppContacts.ask_info("Name")
+        if null_or_blank(name):
+            return
+        p = self.search(name)
+        if p is not None:
+            print("-" * (len(p.name.name) + 6))
+            AppContacts.show_data(p)
+            print("-" * (len(p.name.name) + 6))
+        else:
+            print("No match!")
     def new(self):
         new = AppContacts.ask_info("Name")
         if null_or_blank(new):
@@ -89,7 +101,7 @@ class AppContacts:
             print("In case you do not want to edit name info, hit 'ENTER'/'Return'")
             new = AppContacts.ask_info("Name")
             if not null_or_blank(new):
-                p.name = new
+                p.name.name = new
             self.menu_telephones(p)
             self.manager.update(p)
         else:
